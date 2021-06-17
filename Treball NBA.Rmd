@@ -1,0 +1,952 @@
+---
+title: "Treball d'investigació sobre l'NBA"
+author: "Miguel Payá, Guillem Miralles, Joan Llavata"
+date:  "`r Sys.Date()`"  #Pondría la fecha del día actual
+params:
+  lang: ES
+lang: "`r switch(params$lang, ES = 'es-ES', EN = 'en-US')`"
+output:
+  html_document:
+    echo: yes
+    number_sections: yes
+    theme: lumen
+    toc: yes
+  html_notebook:
+    echo: yes
+    number_sections: yes
+    toc: yes
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+    number_sections: yes
+language:
+  label:
+    fig: 'Figura '
+    tab: 'Tabla '
+    eq: 'Ecuación '
+    thm: 'Teorema '
+    lem: 'Lema '
+    def: 'Definición '
+    cor: 'Corolario '
+    prp: 'Proposición '
+    exm: 'Ejemplo '
+    exr: 'Ejercicio '
+    proof: 'Demostración. '
+    remark: 'Nota: '
+    solution: 'Solución. '
+---
+
+
+```{r setup, cache = F, echo = F, message = F, warning = F, tidy = F}
+
+# CONFIGURACIÓN GENERAL
+library(knitr)
+options(width = 100)
+# Opciones generales chunks
+opts_chunk$set(echo=T,message = F, error = F, warning = F, comment = NA, fig.align = 'center', dpi = 100, tidy = F, cache.path = '.cache/', fig.path = './figure/')
+
+#options(xtable.type = 'html')
+knit_hooks$set(inline = function(x) {
+  
+  if(is.numeric(x)) {
+    round(x, getOption('digits'))
+  } else {
+    paste(as.character(x), collapse = ', ')
+  }
+})
+#knit_hooks$set(plot = knitr:::hook_plot_html)
+```
+
+
+
+```{r, cache = F, echo = F, message = F, warning = F, tidy = F}
+# Especificamos las librerías necesarias en esta lista
+
+packages = c("tidyverse","knitr","matlib","pracma","readr","haven","stats4","fitdistrplus","vcd","FNN","ISLR","MASS","dplyr","faraway","car","leaps","boot","pROC","nnet","class","glmnet","pls","plotly","gt","ggplot2","readxl")
+
+#use this function to check if each package is on the local machine
+#if a package is installed, it will be loaded
+#if any are not, the missing package(s) will be installed and loaded
+package.check <- lapply(packages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE)
+    library(x, character.only = TRUE)
+  }
+})
+
+#verify they are loaded
+search()
+```
+
+# DADES D'ESTUDI
+
+## Importació de les dades
+
+El primer que hem de fer és carregar el fitxer amb les dades que anem a estudiar.
+
+```{r}
+library(readr)
+Seasons_Stats <- read_csv("./NBA_ML/Seasons_Stats.csv",
+     col_types = cols(`2P%` = col_number(), 
+         `3P` = col_double(), `3PAr` = col_number(), 
+         `AST%` = col_number(), BLK = col_double(), 
+         `BLK%` = col_number(), BPM = col_double(), 
+         DBPM = col_double(), DRB = col_double(), 
+         `DRB%` = col_number(), `FT%` = col_number(), 
+         FTr = col_number(), GS = col_double(), 
+         MP = col_double(), OBPM = col_double(), 
+         ORB = col_double(), `ORB%` = col_number(), 
+         PER = col_double(), STL = col_double(), 
+         `STL%` = col_number(), `TOV%` = col_number(),`3P%` = col_double() ,
+         `3PA` = col_double(), `TOV` = col_double(),
+         TRB = col_double(), `TRB%` = col_number(), 
+         `TS%` = col_number(), `USG%` = col_number(), 
+         VORP = col_double(), `WS/48` = col_number(), 
+         X1 = col_skip(), Year = col_integer(), 
+         blank2 = col_skip(), blanl = col_skip(), 
+         `eFG%` = col_number()))
+
+```
+
+## Selecció de les dades
+
+Una vegada tenim el fitxer en el nostre banc de dades, elegim les dades amb les que anem a treballar. En aquest cas, seleccionem les dades a partir de l'any 1980, ja que és en aquesta any quan s'implanta el tir de 3 punts en l'NBA.
+
+```{r}
+library(dplyr)
+Seasons_Stats2 <- Seasons_Stats %>% subset(Year > 1979)
+```
+
+## Adequació de les dades
+
+Per a saber si un jugador està dins dels millors quintets de l'any hem de crear una nova variable, que anomenarem **quinteto** que serà una variable que prendrà el valor 1 si el jugador està inclòs en algún dels tres quintets (dos fins l'any 1989) o 0 si el jugador no apareix en cap quintet.
+
+Abans de crear aquesta variable hem d'introduir els millors quintetos de cada any. Aquells jugadors que apareixen amb el caràcter * són membres del Basketball Hall of Fame.
+
+```{r}
+quinteto80 <- c("Julius Erving*","Dan Roundfield","Larry Bird*","Marques Johnson","Kareem Abdul-Jabbar*","Moses Malone*","George Gervin*","Dennis Johnson*","Paul Westphal","Gus Williams")
+
+quinteto81 <- c("Julius Erving*","Marques Johnson", "Larry Bird*","Adrian Dantley*","Kareem Abdul-Jabbar*","Moses Malone*","George Gervin*","Otis Birdsong","Dennis Johnson*","Tiny Archibald*")
+
+quinteto82 <- c("Larry Bird*","Alex English*","Julius Erving*","Bernard King*","Moses Malone*","Robert Parish*", "George Gervin*","Magic Johnson*", "Gus Williams","Sidney Moncrief")
+
+quinteto83 <- c("Larry Bird*","Alex English*" ,"Julius Erving*","Buck Williams","Moses Malone*","Kareem Abdul-Jabbar*", "Magic Johnson*","George Gervin*","Sidney Moncrief","Isiah Thomas*")
+
+quinteto84 <- c("Larry Bird*","Adrian Dantley*","Bernard King*" ,"Julius Erving*","Kareem Abdul-Jabbar*","Moses Malone*" ,"Magic Johnson*","Sidney Moncrief" ,"Isiah Thomas*","Jim Paxson")
+
+quinteto85 <- c("Larry Bird*","Terry Cummings","Bernard King*","Ralph Sampson*","Moses Malone*", "Kareem Abdul-Jabbar*","Magic Johnson*","Michael Jordan*","Isiah Thomas*","Sidney Moncrief")
+
+quinteto86 <- c("Larry Bird*","Charles Barkley*","Dominique Wilkins*","Alex English*","Kareem Abdul-Jabbar*","Hakeem Olajuwon*","Magic Johnson*","Sidney Moncrief","Isiah Thomas*","Alvin Robertson")
+
+quinteto87 <- c("Larry Bird*" ,"Dominique Wilkins*","Kevin McHale*","Charles Barkley*","Hakeem Olajuwon*", "Moses Malone*","Magic Johnson*","Isiah Thomas*","Michael Jordan*","Fat Lever")
+
+quinteto88 <- c("Larry Bird*","Karl Malone*","Charles Barkley*","Dominique Wilkins*","Hakeem Olajuwon*", "Patrick Ewing*","Michael Jordan*","Clyde Drexler*","Magic Johnson*","John Stockton*")
+
+quinteto89 <- c("Karl Malone*","Tom Chambers","Dominique Wilkins*", "Charles Barkley*","Chris Mullin*", "Terry Cummings","Hakeem Olajuwon*","Patrick Ewing*","Robert Parish*","Michael Jordan*" ,"John Stockton*","Dale Ellis","Magic Johnson*","Kevin Johnson","Mark Price")
+
+quinteto90 <- c("Karl Malone*","Larry Bird*","James Worthy*","Charles Barkley*","Tom Chambers","Chris Mullin*","Patrick Ewing*","Hakeem Olajuwon*","David Robinson*","Magic Johnson*","John Stockton*","Clyde Drexler*","Michael Jordan*","Kevin Johnson","Joe Dumars*")
+
+quinteto91 <- c("Karl Malone*","Dominique Wilkins*","James Worthy*","Charles Barkley*","Chris Mullin*","Bernard King*","David Robinson*","Patrick Ewing*","Hakeem Olajuwon*","Michael Jordan*" ,"Kevin Johnson","John Stockton*","Magic Johnson*","Clyde Drexler*","Joe Dumars*")
+
+quinteto92 <- c("Karl Malone*","Scottie Pippen*","Dennis Rodman*","Chris Mullin*","Charles Barkley*","Kevin Willis","David Robinson*","Patrick Ewing*","Brad Daugherty","Michael Jordan*","Tim Hardaway","Mark Price", "Clyde Drexler*","John Stockton*","Kevin Johnson")
+
+quinteto93 <- c("Charles Barkley*","Dominique Wilkins*","Scottie Pippen*","Karl Malone*","Larry Johnson", "Derrick Coleman","Hakeem Olajuwon*","Patrick Ewing*","David Robinson*","Michael Jordan*","John Stockton*","Tim Hardaway","Mark Price","Joe Dumars*","Drazen Petrovic*")
+
+quinteto94 <- c("Scottie Pippen*","Shawn Kemp","Derrick Coleman","Karl Malone*","Charles Barkley*","Dominique Wilkins*","Hakeem Olajuwon*","David Robinson*","Shaquille O'Neal*","John Stockton*","Mitch Richmond*","Mark Price","Latrell Sprewell","Kevin Johnson","Gary Payton*")
+
+quinteto95 <- c("Karl Malone*","Charles Barkley*","Detlef Schrempf","Scottie Pippen*","Shawn Kemp","Dennis Rodman*","David Robinson*","Shaquille O'Neal*","Hakeem Olajuwon*","John Stockton*","Gary Payton*","Reggie Miller*","Anfernee Hardaway","Mitch Richmond*","Clyde Drexler*")
+
+quinteto96 <- c("Scottie Pippen*","Shawn Kemp","Charles Barkley*","Karl Malone*","Grant Hill","Juwan Howard","David Robinson*","Hakeem Olajuwon*","Shaquille O'Neal*","Michael Jordan*","Gary Payton*","Mitch Richmond*","Anfernee Hardaway","John Stockton*" ,"Reggie Miller*")
+
+quinteto97 <- c("Karl Malone*" ,"Scottie Pippen*" ,"Anthony Mason","Grant Hill","Glen Rice","Vin Baker", "Hakeem Olajuwon*","Patrick Ewing*","Shaquille O'Neal*" ,"Michael Jordan*" ,"Gary Payton*","John Stockton*","Tim Hardaway","Mitch Richmond*" ,"Anfernee Hardaway")
+
+quinteto98 <- c("Karl Malone*","Grant Hill","Scottie Pippen*","Tim Duncan","Vin Baker","Glen Rice","Shaquille O'Neal*","David Robinson*","Dikembe Mutombo*","Michael Jordan*","Tim Hardaway","Mitch Richmond*" ,"Gary Payton*","Rod Strickland","Reggie Miller*")
+
+quinteto99 <- c("Karl Malone*","Chris Webber" ,"Kevin Garnett","Tim Duncan", "Grant Hill" ,"Antonio McDyess" ,"Alonzo Mourning*","Shaquille O'Neal*","Hakeem Olajuwon*","Allen Iverson*","Gary Payton*","Kobe Bryant","Jason Kidd","Tim Hardaway","John Stockton*")
+
+quinteto00 <- c("Tim Duncan","Karl Malone*","Chris Webber","Kevin Garnett","Grant Hill","Vince Carter","Shaquille O'Neal*","Alonzo Mourning*" ,"David Robinson*","Jason Kidd","Allen Iverson*","Eddie Jones","Gary Payton*","Kobe Bryant","Stephon Marbury")
+
+quinteto01 <- c("Tim Duncan","Kevin Garnett","Karl Malone*","Chris Webber","Vince Carter","Dirk Nowitzki","Shaquille O'Neal*","Dikembe Mutombo*","David Robinson*","Allen Iverson*","Kobe Bryant","Gary Payton*" ,"Jason Kidd","Tracy McGrady","Ray Allen")
+
+quinteto02 <- c("Tim Duncan","Kevin Garnett","Ben Wallace","Tracy McGrady","Chris Webber","Jermaine O'Neal","Shaquille O'Neal*","Dirk Nowitzki","Dikembe Mutombo*","Jason Kidd","Gary Payton*","Paul Pierce", "Kobe Bryant","Allen Iverson*","Steve Nash")
+
+quinteto03 <- c("Tim Duncan","Dirk Nowitzki","Paul Pierce","Kevin Garnett","Chris Webber" ,"Jamal Mashburn","Shaquille O'Neal*","Ben Wallace","Jermaine O'Neal","Kobe Bryant","Jason Kidd","Stephon Marbury","Tracy McGrady","Allen Iverson*","Steve Nash")
+
+quinteto04 <- c("Kevin Garnett","Jermaine O'Neal","Dirk Nowitzki","Tim Duncan","Peja Stojakovicn","Ron Artest","Shaquille O'Neal*","Ben Wallace","Yao Ming*","Kobe Bryant","Sam Cassell","Michael Redd","Jason Kidd","Tracy McGrady","Baron Davis")
+
+quinteto05 <- c("Tim Duncan","LeBron James","Tracy McGrady","Dirk Nowitzki","Kevin Garnett","Shawn Marion", "Shaquille O'Neal*","Amar'e Stoudemire","Ben Wallace","Allen Iverson*","Dwyane Wade","Kobe Bryant","Steve Nash","Ray Allen","Gilbert Arenas")
+
+quinteto06 <- c("LeBron James","Elton Brand","Shawn Marion","Dirk Nowitzki","Tim Duncan","Carmelo Anthony", "Shaquille O'Neal*","Ben Wallace","Yao Ming*","Kobe Bryant","Chauncey Billups","Allen Iverson*","Steve Nash","Dwyane Wade","Gilbert Arenas")
+
+quinteto07 <- c("Dirk Nowitzki","LeBron James","Kevin Garnett","Tim Duncan","Chris Bosh","Carmelo Anthony","Amar'e Stoudemire","Yao Ming*","Dwight Howard","Steve Nash","Gilbert Arenas","Dwyane Wade","Kobe Bryant","Tracy McGrady","Chauncey Billups")
+
+quinteto08 <- c("Kevin Garnett","Dirk Nowitzki","Carlos Boozer","LeBron James","Tim Duncan" ,"Paul Pierce", "Dwight Howard","Amar'e Stoudemire","Yao Ming*","Kobe Bryant","Steve Nash","Tracy McGrady","Chris Paul","Deron Williams","Manu Ginobili")
+
+quinteto09 <- c("LeBron James","Tim Duncan","Carmelo Anthony","Dirk Nowitzki","Paul Pierce","Pau Gasol","Dwight Howard","Yao Ming*","Shaquille O'Neal*","Kobe Bryant","Brandon Roy","Chauncey Billups", "Dwyane Wade","Chris Paul","Tony Parker")
+
+quinteto10 <- c("LeBron James","Dirk Nowitzki","Brandon Roy","Kevin Durant","Steve Nash","Pau Gasol","Dwight Howard","Amar'e Stoudemire","Andrew Bogut","Kobe Bryant","Carmelo Anthony","Tim Duncan", "Dwyane Wade","Deron Williams","Joe Johnson")
+
+quinteto11 <- c("LeBron James","Dirk Nowitzki","LaMarcus Aldridge","Kevin Durant","Amar'e Stoudemire","Zach Randolph","Dwight Howard","Pau Gasol","Al Horford", "Kobe Bryant","Dwyane Wade","Manu Ginobili","Derrick Rose","Russell Westbrook","Chris Paul")
+
+quinteto12 <- c("LeBron James","Kevin Love","Carmelo Anthony","Kevin Durant","Blake Griffin","Dirk Nowitzki","Dwight Howard","Andrew Bynum","Tyson Chandler","Kobe Bryant","Tony Parker","Dwyane Wade","Chris Paul","Russell Westbrook","Rajon Rondo")
+
+quinteto13 <- c("LeBron James","Carmelo Anthony","Paul George","Kevin Durant","Blake Griffin","David Lee", "Tim Duncan","Marc Gasol","Dwight Howard","Kobe Bryant","Tony Parker","Dwyane Wade","Chris Paul","Russell Westbrook","James Harden")
+
+quinteto14 <- c("Kevin Durant","Blake Griffin","Paul George","LeBron James","Kevin Love","LaMarcus Aldridge","Joakim Noah","Dwight Howard","Al Jefferson","James Harden","Stephen Curry","Goran Dragic","Chris Paul","Tony Parker","Damian Lillard")
+
+quinteto15 <- c("LeBron James","LaMarcus Aldridge","Blake Griffin","Anthony Davis","DeMarcus Cousins","Tim Duncan","Marc Gasol","Pau Gasol","DeAndre Jordan","James Harden","Russell Westbrook","Klay Thompson","Stephen Curry","Chris Paul","Kyrie Irving")
+
+quinteto16 <- c("Kawhi Leonard","Kevin Durant","Paul George","LeBron James","Draymond Green","LaMarcus Aldridge","DeAndre Jordan","DeMarcus Cousins","Andre Drummond","Stephen Curry","Damian Lillard","Klay Thompson","Russell Westbrook","Chris Paul","Kyle Lowry")
+
+quinteto17 <- c("Kawhi Leonard","Kevin Durant","Jimmy Butler","LeBron James","Giannis Antetokounmpo","Draymond Green","Anthony Davis","Rudy Gobert","DeAndre Jordan","James Harden","Stephen Curry","John Wall","Russell Westbrook","Isaiah Thomas","DeMar DeRozan")
+```
+
+Una vegada hem introduït tots els quintets, anem a crear la funció que aplicarem després a cada quintet.
+
+```{r}
+funcion_quinteto <- function(quinteto_df,any){
+df <- Seasons_Stats2 %>% subset(Year == any)
+quinteto <- 0
+for (i in (1:length(df$Player))) {
+if (df$Player[i] %in% quinteto_df){
+  quinteto[i] = 1
+}else{
+  quinteto[i] = 0
+}
+}
+df_any<- data.frame(quinteto,df)
+return(df_any)
+}
+```
+
+Amb la funció ja definida, l'apliquem a cada quinteto i obtenim els dataframes amb la nova variable afegida.
+
+```{r}
+df_any80 <- funcion_quinteto(quinteto80,1980)
+df_any81 <- funcion_quinteto(quinteto81,1981)
+df_any82 <- funcion_quinteto(quinteto82,1982)
+df_any83 <- funcion_quinteto(quinteto83,1983)
+df_any84 <- funcion_quinteto(quinteto84,1984)
+df_any85 <- funcion_quinteto(quinteto85,1985)
+df_any86 <- funcion_quinteto(quinteto86,1986)
+df_any87 <- funcion_quinteto(quinteto87,1987)
+df_any88 <- funcion_quinteto(quinteto88,1988)
+df_any89 <- funcion_quinteto(quinteto89,1989)
+df_any90 <- funcion_quinteto(quinteto90,1990)
+df_any91 <- funcion_quinteto(quinteto91,1991)
+df_any92 <- funcion_quinteto(quinteto92,1992)
+df_any93 <- funcion_quinteto(quinteto93,1993)
+df_any94 <- funcion_quinteto(quinteto94,1994)
+df_any95 <- funcion_quinteto(quinteto95,1995)
+df_any96 <- funcion_quinteto(quinteto96,1996)
+df_any97 <- funcion_quinteto(quinteto97,1997)
+df_any98 <- funcion_quinteto(quinteto98,1998)
+df_any99 <- funcion_quinteto(quinteto99,1999)
+df_any00 <- funcion_quinteto(quinteto00,2000)
+df_any01 <- funcion_quinteto(quinteto01,2001)
+df_any02 <- funcion_quinteto(quinteto02,2002)
+df_any03 <- funcion_quinteto(quinteto03,2003)
+df_any04 <- funcion_quinteto(quinteto04,2004)
+df_any05 <- funcion_quinteto(quinteto05,2005)
+df_any06 <- funcion_quinteto(quinteto06,2006)
+df_any07 <- funcion_quinteto(quinteto07,2007)
+df_any08 <- funcion_quinteto(quinteto08,2008)
+df_any09 <- funcion_quinteto(quinteto09,2009)
+df_any10 <- funcion_quinteto(quinteto10,2010)
+df_any11 <- funcion_quinteto(quinteto11,2011)
+df_any12 <- funcion_quinteto(quinteto12,2012)
+df_any13 <- funcion_quinteto(quinteto13,2013)
+df_any14 <- funcion_quinteto(quinteto14,2014)
+df_any15 <- funcion_quinteto(quinteto15,2015)
+df_any16 <- funcion_quinteto(quinteto16,2016)
+df_any17 <- funcion_quinteto(quinteto17,2017)
+```
+
+## Divisió de les dades
+
+Quan ja tenim la nova variable creada per a cada any, hem de dividir el banc de dades en un conjunt d'entrenament i un conjunt de prova. En aquest cas, el conjunt d'entrenament estarà format per les dades fins l'any 2011, mentre que el conjunt de prova contindrà dades des de l'any 2012 fins l'any 2017.
+
+```{r}
+bd <- rbind(df_any80,df_any81,df_any82,df_any83,df_any84,df_any85,df_any86,df_any87,df_any88,df_any89,
+            df_any90,df_any91,df_any92,df_any93,df_any94,df_any95,df_any96,df_any97,df_any98,df_any99,
+            df_any00,df_any01,df_any02,df_any03,df_any04,df_any05,df_any06,df_any07,df_any08,df_any09,
+            df_any10,df_any11)
+bdpredict<-rbind(df_any12,df_any13,df_any14,df_any15,df_any16,df_any17)
+```
+
+Per a poder treballar correctament amb el banc de dades, hem d'eliminar els valors NULL i NA, que ens poden dificultar els nostres anàlisis. 
+
+```{r}
+bd[is.na(bd)] = 0
+bdpredict[is.na(bdpredict)]= 0
+```
+
+A les dades tenim un problema. Hi ha jugadors que estàn als quintets, que a mitad temporada han sigut traspasats a un altre equip. Per tant, tenen estadistiques de 2 equips diferents. La base de dades ja incorpora la suma d'aquestes dos estadistiques, per tant, tenim 3 files amb les estadistiques del jugador. Nosaltres sols tenim interés en les dades totals de la temporada, per tant, anem a eliminar les dades que corresponen a cada equipo per separat.Els jugadors en aquesta situació són: Dominique Wiklins (1994), Clyde Drexler (1995), Dikembe Mutombo (2001), Chauncey Billups(2009) i DeMarcus Cousins (2017). Eliminem les dues files que no ens interesen de cada jugador (les dels equips).
+
+```{r}
+bd <- bd[-c(6069,6070,6203,6204,9568,9569,13639,13640),]
+df_any17 <-df_any17[-c(112,113),] 
+```
+
+## Respresentació gràfica de les dades inicials
+
+Una vegada hem adequat les dades per a poder treballar amb elles, realitzem visualització de les variables. Ja a primera vista si ens fixem en les variables que hem explicat al word, hi ha moltes que poden tindre correlació ja que expliquen el mateix. Per a veure-ho més clar, anem a visualitzar algunes d'elles:
+
+```{r}
+attach(bd)
+
+pairs( X3P ~ X3PA + X3P.)
+pairs(X2P ~ X2PA + X2P.)
+pairs(WS ~ OWS + DWS + WS.48)
+pairs( PTS ~ FG + FT)
+pairs(BPM ~ DBPM + OBPM)
+pairs(FGA ~ X3PA + X2PA)
+```
+
+A les distintes gràfiques, podem observar que moltes de les variables ens mostren informació que no és del tot relevant. Per a saber quines hem  d'utilitzar, anem a fer ús de diverses tècniques que ens ajuden a trobar les millors variables per al nostre model.
+
+## Selecció de variables
+
+En aquest apartat anem a utilitzar diferents mètodes per tal de quedar-nos amb les variables que més rellevància puguen tindre al nostre model. 
+
+### Mètode Lasso
+
+La primera tècnica que anem a emprar és el mètode Lasso.
+
+```{r}
+library(glmnet)
+x <- model.matrix(quinteto~ Pos+Age+G+MP+PER+TS.+X3PAr+FTr+ORB.+TRB.+AST.+STL.+BLK.+TOV.+USG.+OWS+DWS+WS+WS.48+OBPM+DBPM+BPM+VORP+FG+FGA+FG.+X3P+X3PA+X3P.+X2P+X2PA+X2P.+eFG.+FT+FTA+FT.+PF+DRB.+ORB+TRB+DRB+AST+STL+BLK+TOV+PTS,bd)[,-1] 
+y <- bd$quinteto
+
+
+lambdas <- 10^seq(5,-5,length=100)
+set.seed(12345)
+cv.lasso.NBA <- cv.glmnet(x,y,alpha=1,lambda=lambdas)
+plot(cv.lasso.NBA)
+cv.lasso.NBA$lambda.1se
+```
+
+```{r}
+lasso.final <- glmnet(x,y,alpha=1,lambda =round(cv.lasso.NBA$lambda.1se,3))
+coef(lasso.final)[coef(lasso.final)[,1] !=0,]
+```
+
+```{r}
+glmnba <- glm(quinteto ~ Pos+ Age + G + MP + TS. + FTr + STL. + TOV. + USG. +DWS + WS + BPM + VORP + FG + FGA + X2P + FTA + PF + ORB + DRB + AST + STL + BLK, data = bd, family = 'binomial')
+summary(glmnba)
+```
+
+```{r}
+step(glmnba)
+```
+
+```{r}
+glmnba.final <-  glm(formula = quinteto ~ Age + G + STL. + TOV. + USG. + DWS + 
+    WS + BPM + VORP + FGA + PF + ORB + AST + BLK, family = "binomial", 
+    data = bd)
+summary(glmnba.final)
+```
+
+```{r}
+nba.prob <- predict(glmnba.final,bdpredict,type="response")
+
+nba.pred <- rep("0_NotInAllNba",length(bdpredict$Player))
+nba.pred[nba.prob > 0.5] <- '1'
+(mean(nba.prob - bdpredict$quinteto)^2)
+
+table(nba.pred,bdpredict$quinteto)
+(3462 + 53 )/3559
+```
+
+```{r}
+pred2 <- predict(glmnba.final, type="response")
+curv_roc4 <- roc(bd$quinteto,pred2)
+plot(curv_roc4)
+curv_roc4$auc
+ci(curv_roc4)
+```
+
+### Mètode QDA
+
+Ara anem a fer ús de l'Anàlisi discriminant quadràtica (QDA) per comparar amb els resultats obtesos amb el mètode Lasso.
+
+```{r}
+qdanba <- qda(formula = quinteto ~ Age + G + STL. + TOV. + USG. + DWS + 
+    WS + BPM + VORP + FGA + PF + ORB + AST + BLK, 
+    data = bd)
+qdanba
+```
+
+```{r}
+qda.pred <- predict(qdanba, bdpredict)
+
+```
+
+```{r}
+qda.class <- qda.pred$class
+table(qda.class,bdpredict$quinteto)
+mean(qda.class == bdpredict$quinteto)
+
+```
+
+```{r}
+c.roc <- roc(bdpredict$quinteto, qda.pred$posterior[,2])
+plot(c.roc)
+c.roc$auc
+ci(c.roc)
+```
+
+### Mètode LDA
+
+També utilitzem el mètode LDA per veure quins resultats obtenim i comparar-los amb els obtessos anteriorment.
+
+```{r}
+ldanba <- lda(formula = quinteto ~ Age + G + STL. + TOV. + USG. + DWS + 
+    WS + BPM + VORP + FGA + PF + ORB + AST + BLK, 
+    data = bd)
+ldanba
+```
+
+```{r}
+lda.pred <- predict(ldanba, bdpredict)
+```
+
+```{r}
+lda.class <- lda.pred$class
+table(lda.class,bdpredict$quinteto)
+mean(lda.class == bdpredict$quinteto)
+```
+
+```{r}
+c2.roc <- roc(bdpredict$quinteto, lda.pred$posterior[,2])
+plot(c2.roc)
+c2.roc$auc
+ci(c2.roc)
+```
+
+
+### Regressió logística múltiple
+
+Per a poder utiltzar la regressió logísitca múltiple correctament, anem a utilitzar, per a cada any, totes les dades fins a l'any corresponent, Per a això, hem de crear tres dataframes amb les dades de tots els anys fins a l'any 2015, 2016 i 2017, respectivament.
+
+```{r}
+bd15 <- rbind(bd,df_any12,df_any13,df_any14)
+bd16 <- rbind(bd15,df_any15)
+bd17 <- rbind(bd16,df_any16)
+```
+
+```{r}
+glmnba2015 <- glm(formula = quinteto ~ Age + G + STL. + TOV. + USG. + DWS + 
+    WS + BPM + VORP + FGA + PF + ORB + AST + BLK, family = "binomial", 
+    data = bd15)
+
+nba.prob2015 <- predict(glmnba2015,df_any15,type="response")
+
+nba.pred2015 <- rep("0_NotInAllNba",length(df_any15$Player))
+nba.pred2015[nba.prob2015 > 0.5] <- '1'
+nba2015 <- sort(nba.prob2015, decreasing=TRUE)
+
+prueba2015 <- nba2015[1:40]
+
+probs <- (prueba2015)*100
+nuevodata2015 <- data.frame(probs,df_any15[names(prueba2015),1:5])
+
+box2015 <- ggplot(data = nuevodata2015[1:30,],mapping = aes(x=quinteto,y=probs,group = quinteto)) +
+  geom_boxplot()
+
+ggplotly(box2015)
+```
+
+```{r}
+glmnba2016 <- glm(formula = quinteto ~ Age + G + STL. + TOV. + USG. + DWS + 
+    WS + BPM + VORP + FGA + PF + ORB + AST + BLK, family = "binomial", 
+    data = bd16)
+
+nba.prob2016 <- predict(glmnba2016,df_any16,type="response")
+
+nba.pred2016 <- rep("0_NotInAllNba",length(df_any16$Player))
+nba.pred2016[nba.prob2016 > 0.5] <- '1'
+nba2016 <- sort(nba.prob2016, decreasing=TRUE)
+
+prueba2016 <- nba2016[1:40]
+probs <- (prueba2016)*100
+nuevodata2016 <- data.frame(probs,df_any16[names(prueba2016),1:5])
+
+box2016 <- ggplot(data = nuevodata2016[1:30,],mapping = aes(x=quinteto,y=probs,group = quinteto)) +
+  geom_boxplot()
+ggplotly(box2016)
+```
+
+```{r}
+glmnba2017 <- glm(formula = quinteto ~ Age + G + STL. + TOV. + USG. + DWS + 
+    WS + BPM + VORP + FGA + PF + ORB + AST + BLK, family = "binomial", 
+    data = bd17)
+
+nba.prob2017 <- predict(glmnba2017,df_any17,type="response")
+nba.pred2017 <- rep("0_NotInAllNba",length(df_any17$Player))
+nba.pred2017[nba.prob2017 > 0.5] <- '1'
+nba2017 <- sort(nba.prob2017, decreasing=TRUE)
+
+prueba2017 <- nba2017[1:40]
+probs <- (prueba2017)*100
+nuevodata2017 <- data.frame(probs,df_any17[names(prueba2017),1:5])
+
+box2017 <- ggplot(data = nuevodata2017[1:30,],mapping = aes(x=quinteto,y=probs,group = quinteto)) +
+  geom_boxplot()
+
+ggplotly(box2017)
+```
+
+## Predicció dels quintets
+
+De tots les tècniques que hem utilitzat, elegim treballar amb el mètode de la regressió logísitca múltiple
+
+```{r}
+
+funcion_posicions <- function(df){
+
+contG = 0
+contF = 0
+contC = 0
+conttotal = 0
+playerselection <- c()
+for (i in (1:length(df$Player))) {
+if (contG < 6 & (df$Pos[i] == 'PG' | df$Pos[i] == 'SG')){
+   contG = contG + 1
+   conttotal = conttotal + 1
+   playerselection[conttotal] <- df$Player[i]
+   print(playerselection)
+  
+}
+else if (contF < 5 & (df$Pos[i] == 'SF' | df$Pos[i] == 'PF')){
+  contF = contF +1
+  conttotal = conttotal +1
+  playerselection[conttotal] <- df$Player[i]
+  print(playerselection)
+}
+else if (contC < 4 & df$Pos[i] == 'C'){
+  contC = contC + 1
+  conttotal = conttotal + 1
+  playerselection[conttotal] <- df$Player[i]
+  print(playerselection)
+
+}}
+print(playerselection)
+df<- df %>% filter(df$Player %in% playerselection)
+
+return(df)
+}
+tablaprediccio15 <- funcion_posicions(nuevodata2015)
+tablaprediccio15$quinteto <- as.logical(tablaprediccio15$quinteto)
+tablaresultats15 <- tablaprediccio15 %>% select(Player, Age, Pos, probs, quinteto)
+names(tablaresultats15)= c("Jugador","Edad","Posicio","Probabilitat","Esta en el quintet?")
+
+
+tablaresultats15 %>% gt()%>% tab_header(
+    title = md("Millors jugadors del 2015"))
+
+no_corresponen2015 <- tablaprediccio15 %>% filter(quinteto %in% 0)
+no_corresponen2015
+
+nuevodata2015 %>% filter(Pos %in% c("PG","SG"))
+sustituts2015 <- nuevodata2015 %>% filter(Player %in% c("Kyrie Irving","Klay Thompson"))
+sustituts2015
+
+correccio2015 <- rbind(no_corresponen2015,sustituts2015)
+correccioresultats <- correccio2015 %>% select(Player, Age, Pos, probs, quinteto)
+correccioresultats$quinteto <- as.logical(correccioresultats$quinteto)
+names(correccioresultats)= c("Jugador","Edad","Posicio","Probabilitat","Esta en el quintet?")
+
+correccioresultats %>% gt()%>% tab_header(
+    title = md("Sustitucions"))
+```
+
+```{r}
+funcion_posicions <- function(df){
+
+contG = 0
+contF = 0
+contC = 0
+conttotal = 0
+playerselection <- c()
+for (i in (1:length(df$Player))) {
+if (contG < 6 & (df$Pos[i] == 'PG' | df$Pos[i] == 'SG')){
+   contG = contG + 1
+   conttotal = conttotal + 1
+   playerselection[conttotal] <- df$Player[i]
+   print(playerselection)
+  
+}
+else if (contF < 6 & (df$Pos[i] == 'SF' | df$Pos[i] == 'PF')){
+  contF = contF +1
+  conttotal = conttotal +1
+  playerselection[conttotal] <- df$Player[i]
+  print(playerselection)
+}
+else if (contC < 3 & df$Pos[i] == 'C'){
+  contC = contC + 1
+  conttotal = conttotal + 1
+  playerselection[conttotal] <- df$Player[i]
+  print(playerselection)
+
+}}
+print(playerselection)
+df<- df %>% filter(df$Player %in% playerselection)
+
+return(df)
+}
+
+###########2016
+
+tablaprediccio16 <- funcion_posicions(nuevodata2016)
+tablaprediccio16$quinteto <- as.logical(tablaprediccio16$quinteto)
+tablaresultats16 <- tablaprediccio16 %>% select(Player, Age, Pos, probs, quinteto)
+names(tablaresultats16)= c("Jugador","Edad","Posicio","Probabilitat","Esta en el quintet?")
+
+
+tablaresultats16 %>% gt()%>% tab_header(
+    title = md("Millors jugadors del 2016"))
+
+no_corresponen2016 <- tablaprediccio16 %>% filter(quinteto %in% 0)
+nuevodata2016 %>% filter(Pos %in% c("SG","PF","SF","C"))
+sustituts2016 <- nuevodata2016 %>% filter(Player %in% c("DeAndre Jordan","Andre Drummond","Klay Thompson","Paul George"))
+
+correccio2016 <- rbind(no_corresponen2016,sustituts2016)
+correccioresultats2016 <- correccio2016 %>% select(Player, Age, Pos, probs, quinteto)
+correccioresultats2016$quinteto <- as.logical(correccioresultats2016$quinteto)
+names(correccioresultats2016)= c("Jugador","Edad","Posicio","Probabilitat","Esta en el quintet?")
+
+correccioresultats2016 %>% gt()%>% tab_header(
+    title = md("Sustitucions"))
+
+#############2017
+
+tablaprediccio17 <- funcion_posicions(nuevodata2017)
+tablaprediccio17$quinteto <- as.logical(tablaprediccio17$quinteto)
+tablaresultats17 <- tablaprediccio17 %>% select(Player, Age, Pos, probs, quinteto)
+names(tablaresultats17)= c("Jugador","Edad","Posicio","Probabilitat","Esta en el quintet?")
+
+
+tablaresultats17 %>% gt()%>% tab_header(
+    title = md("Millors jugadors del 2017"))
+
+no_corresponen2017 <- tablaprediccio17 %>% filter(quinteto %in% 0)
+no_corresponen2017
+nuevodata2017 %>% filter(Pos %in% c("PF","SF","C"))
+sustituts2017 <- nuevodata2017 %>% filter(Player %in% c("DeAndre Jordan","Draymond Green"))
+
+correccio2017 <- rbind(no_corresponen2017,sustituts2017)
+correccioresultats2017 <- correccio2017 %>% select(Player, Age, Pos, probs, quinteto)
+correccioresultats2017$quinteto <- as.logical(correccioresultats2017$quinteto)
+names(correccioresultats2017)= c("Jugador","Edad","Posicio","Probabilitat","Esta en el quintet?")
+
+correccioresultats2017 %>% gt()%>% tab_header(
+    title = md("Sustitucions"))
+```
+
+## Representació gràfica
+
+Una vegada hem obtés els millors quintets per als tres anys (2015,2016,2017), anem a representar-los gràficament.
+
+
+### ANY 2015
+
+```{r}
+plotly2015 <- ggplot(data = tablaprediccio15,mapping = aes(x=reorder(Player,probs),y=probs,fill = quinteto)) + geom_bar(stat = "identity")+
+  theme_bw() + theme(axis.text.x=element_text(angle=90))+labs(title = "Predicció dels millors quintets",
+     subtitle = "ANY 2015",
+     x        = "Jugadors",
+     y        = "Probabilitat") + coord_cartesian(ylim = c(10,100))
+
+ggplotly(plotly2015)
+
+
+plotly2015pos <- ggplot(data = tablaprediccio15,
+                     mapping = aes( x = reorder(Player,probs),y=probs, fill = Pos)) +
+ 
+  geom_bar(stat = "identity") +
+   scale_fill_manual(values=c("chartreuse","brown1","deepskyblue", "brown3","deepskyblue3")) + 
+  theme_bw() +theme(axis.text.x=element_text(angle=90))+labs(title = "PREDICCIÓ MILLOR QUINTET PER POSICIÓ",
+     subtitle = "ANY 2015",
+     x        = "Jugadors",
+     y        = "Probabilitat") + coord_cartesian(ylim = c(10,100))
+ggplotly(plotly2015pos)
+
+```
+
+### ANY 2016
+
+```{r}
+
+plotly2016 <- ggplot(data = tablaprediccio16,mapping = aes(x=reorder(Player,probs),y=probs,fill = quinteto)) +
+
+  geom_bar(stat = "identity")+
+  theme_bw() +theme(axis.text.x=element_text(angle=90))+labs(title = "Predicció dels millors quintets",
+     subtitle = "ANY 2016",
+     x        = "Jugadors",
+     y        = "Probabilitat") + coord_cartesian(ylim = c(10,100))
+ggplotly(plotly2016)
+
+
+plotly2016pos <- ggplot(data = tablaprediccio16,
+                     mapping = aes( x = reorder(Player,probs),y=probs, fill = Pos)) +
+ 
+  geom_bar(stat = "identity") +
+   scale_fill_manual(values=c("chartreuse","brown1","deepskyblue", "brown3","deepskyblue3")) + 
+  theme_bw() +theme(axis.text.x=element_text(angle=90))+labs(title = "PREDICCIÓ MILLOR QUINTET PER POSICIÓ",
+     subtitle = "ANY 2016",
+     x        = "Jugadors",
+     y        = "Probabilitat") + coord_cartesian(ylim = c(10,100))
+ggplotly(plotly2016pos)
+
+
+
+```
+
+### ANY 2017
+
+```{r}
+
+plotly2017 <- ggplot(data = tablaprediccio17,mapping = aes(x=reorder(Player,probs),y=probs,fill = quinteto)) +
+
+  geom_bar(stat = "identity")+
+  theme_bw() +theme(axis.text.x=element_text(angle=90))+labs(title = "Predicció dels millors quintets",
+     subtitle = "ANY 2017",
+     x        = "Jugadors",
+     y        = "Probabilitat") + coord_cartesian(ylim = c(0,100))
+ggplotly(plotly2017)
+
+
+plotly2017pos <- ggplot(data = tablaprediccio17,
+                     mapping = aes( x = reorder(Player,probs),y=probs, fill = Pos)) +
+ 
+  geom_bar(stat = "identity") +
+   scale_fill_manual(values=c("chartreuse","brown1","deepskyblue", "brown3","deepskyblue3")) + 
+  theme_bw() +theme(axis.text.x=element_text(angle=90))+labs(title = "PREDICCIÓ MILLOR QUINTET PER POSICIÓ",
+     subtitle = "ANY 2017",
+     x        = "Jugadors",
+     y        = "Probabilitat") + coord_cartesian(ylim = c(0,100))
+ggplotly(plotly2017pos)
+
+
+
+```
+
+
+
+# PREDICCIÓ PER A L'ACTUAL TEMPORADA
+
+## Importació de les dades
+
+El primer que fem és carregar el fitxer que conté les dades que anem a estudiar.
+
+```{r}
+data20 <- read_excel("./NBA_ML/data20.xlsx", 
+     col_types = c("skip", "text", "text", 
+         "text", "numeric", "numeric", "numeric", 
+         "skip", "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "skip", "skip", "skip"))
+```
+
+Fixant-nos en el nombre de variables, podem veure que és molt més reduït comparat amb l'anterior banc de dades amb el que estavem tractant.
+
+## Adequació de les dades
+
+Per a no originar confusións, renombrem totes les variables amb el nom que tenien en l'anterior conjunt de dades.
+
+```{r}
+data20 <- data20 %>% rename(
+  Player = `FULL NAME`,
+  Pos = POS,
+  Ag = AGE,
+  Tm = TEAM,
+  G = GP,
+  USG.  = `USG%Usage RateUsage rate, a.k.a., usage percentage is an estimate of the percentage of team plays used by a player while he was on the floor`,
+   TOV. = `TO%Turnover RateA metric that estimates the number of turnovers a player commits per 100 possessions` ,
+   FT.= `FT%` ,
+   X3PA= `3PA` ,
+   XRP.= `3P%` ,
+   eFG.= `eFG%Effective Shooting PercentageWith eFG%, three-point shots made are worth 50% more than two-point shots made. eFG% Formula=(FGM+ (0.5 x 3PM))/FGA` ,
+   TS.= `TS%True Shooting PercentageTrue shooting percentage is a measure of shooting efficiency that takes into account field goals, 3-point field goals, and free throws.` ,
+    PPG= `PPGPointsPoints per game.`,
+   RPG = `RPGReboundsRebounds per game.` ,
+   TRB. = `TRB%Total Rebound PercentageTotal rebound percentage is estimated percentage of available rebounds grabbed by the player while the player is on the court.` ,
+   APG = `APGAssistsAssists per game.` ,
+   AST. = `AST%Assist PercentageAssist percentage is an estimated percentage of teammate field goals a player assisted while the player is on the court` ,
+   SPG = `SPGStealsSteals per game.`,
+    BPG = `BPGBlocksBlocks per game.`,
+   TPG = `TOPGTurnoversTurnovers per game.` 
+)
+```
+
+En aquets banc de dades falten algunes estadístiques com els punts total, minuts totals, asistències totals. Açò es deu a que l'actual tempoorada no s'ha pogut completar a causa del COVID-19, aleshores, el que anem a fer es simular-les amb les dades que tenim. Quan estiguen calculades les afegirem al banc de dades i les renombrarem.
+
+```{r}
+data20$PTS = data20$G * data20$PPG
+data20$MP = data20$G * data20$MPG
+data20$TRB = data20$G * data20$RPG
+data20$AST = data20$G * data20$APG
+data20$STL = data20$G * data20$SPG
+data20$BLK  = data20$G * data20$BPG
+data20$TOV = data20$G * data20$TPG
+
+datamedias <-data20[,-c(6,17,18,20,22,23,24)]
+
+datafinal <- datamedias %>% rename(
+  Age = Ag,
+  X2PA = `2PA`,
+  X2P. = `2P%`,
+  X3P. = XRP.
+)
+datafinal[is.na(datafinal)] = 0
+```
+
+## Selecció de variables
+
+En aquest apartat anem a utilitzar diferents mètodes per tal de quedar-nos amb les variables que més rellevància puguen tindre al nostre model. 
+
+### Mètode QDA
+
+Primerament, anem a fer ús de l'Anàlisi discriminant quadràtica (QDA).
+
+```{r}
+qda20 <- qda(formula = quinteto ~ Age + G + USG. + X2PA + X2P. + X3PA + 
+    PTS + AST. + TRB + AST + STL + BLK + TOV, family = "binomial", 
+    data = bd)
+qda20
+qdapred20 <- predict(qda20, bdpredict)
+qdaclass20 <- qdapred20$class
+table(qdaclass20,bdpredict$quinteto)
+mean(qdaclass20 == bdpredict$quinteto)
+```
+
+### Mètode LDA
+
+També utilitzem el mètode LDA per veure quins resultats obtenim i comparar-los amb els obtessos anteriorment.
+
+```{r}
+lda20 <- lda(formula = quinteto ~ Age + G + USG. + X2PA + X2P. + X3PA + 
+    PTS + AST. + TRB + AST + STL + BLK + TOV, family = "binomial", 
+    data = bd)
+lda20
+ldapred20 <- predict(lda20, bdpredict)
+ldaclass20 <- ldapred20$class
+table(ldaclass20,bdpredict$quinteto)
+mean(ldaclass20 == bdpredict$quinteto)
+```
+
+### Regressió logística múltiple
+
+Per a poder utiltzar la regressió logísitca múltiple correctament, anem a utilitzar totes les dades fins a l'any 2020, Per a això, hem de crear un nou dataframes amb les dades de tots els anys fins a l'any 2020.
+
+```{r}
+bd20 <- rbind(bd17,df_any17)
+bd20[is.na(bd20)] = 0
+```
+
+```{r}
+glminicial <- glm(quinteto~ Pos + Age + G + USG. + TOV. + FTA + FT. + X2PA + X2P. + X3PA + X3P. + eFG. + TS. + PTS + AST. + TRB + AST + STL + BLK + TOV, data = bd, family = 'binomial')
+summary(glminicial)
+
+step(glminicial)
+```
+
+```{r}
+glm2020 <- glm(formula = quinteto ~ Age + G + USG. + X2PA + X2P. + X3PA + 
+    PTS + AST. + TRB + AST + STL + BLK + TOV, family = "binomial", 
+    data = bd)
+summary(glm2020)
+
+step(glm2020)
+
+glmfinal20 <- glm(formula = quinteto ~ Age + G + USG. + X2PA + X2P. + X3PA + 
+    PTS + AST. + TRB + AST + STL + BLK + TOV, family = "binomial", 
+    data = bd20)
+```
+
+
+```{r}
+nba.prob <- predict(glmfinal20,datafinal,type="response")
+nba.prob
+nba2020 <- sort(nba.prob, decreasing=TRUE)
+
+prueba2020 <- nba2020[1:40]
+probs <- (prueba2020)*100
+
+nuevodata20 <- data.frame(probs,datafinal[names(prueba2020),1:5])
+
+```
+
+## Predicció dels quintets
+
+De tots les tècniques que hem utilitzat, elegim treballar amb el mètode de la regressió logísitca múltiple
+
+```{r}
+funcion_posicions <- function(df){
+
+contG = 0
+contF = 0
+contC = 0
+conttotal = 0
+playerselection <- c()
+for (i in (1:length(df$Player))) {
+if (contG < 6 & (df$Pos[i] == 'G' | df$Pos[i] == 'G-F' | df$Pos[i] == 'F-G')){
+   contG = contG + 1
+   conttotal = conttotal + 1
+   playerselection[conttotal] <- df$Player[i]
+   print(playerselection)
+  
+}
+else if (contF < 6 & (df$Pos[i] == 'F' | df$Pos[i] == 'G-F' | df$Pos[i] == 'F-G' | df$Pos[i] == 'F-C' | df$Pos[i] == 'C-F')){
+  contF = contF +1
+  conttotal = conttotal +1
+  playerselection[conttotal] <- df$Player[i]
+  print(playerselection)
+}
+else if (contC < 3 & (df$Pos[i] == 'C' | df$Pos[i] == 'F-C' | df$Pos[i] == 'C-F')){
+  contC = contC + 1
+  conttotal = conttotal + 1
+  playerselection[conttotal] <- df$Player[i]
+  print(playerselection)
+
+}}
+print(playerselection)
+df<- df %>% filter(df$Player %in% playerselection)
+
+return(df)
+}
+
+nuevodata20$Age <- trunc(nuevodata20$Age)
+tablaprediccio20 <- funcion_posicions(nuevodata20)
+tablaresultats20 <- tablaprediccio20 %>% select(Player, Age, Pos, probs)
+names(tablaresultats20)= c("Jugador","Edad","Posicio","Probabilitat")
+
+
+tablaresultats20 %>% gt()%>% tab_header(
+    title = md("Millors jugadors del 2020"))
+```
+
+## Representació gràfica
+
+Una vegada hem obtés els 3 millors quintets de l'any 2020, anem a representar-los gràficament.
+
+```{r}
+plotly2020 <- ggplot(data = tablaprediccio20,mapping = aes(x=reorder(Player,probs),y=probs)) +
+
+  geom_bar(stat = "identity",fill='darkblue')+
+  #scale_fill_manual(values=c("gray0","gray16","gray45", "gray25","gray87","gray63")) +
+  theme_bw() +theme(axis.text.x=element_text(angle=90))+labs(title = "Predicció Quintets",
+     subtitle = "Any 2020",
+     x        = "Jugadors",
+     y        = "Probabilitat") + coord_cartesian(ylim = c(10,100))
+ggplotly(plotly2020)
+
+box2020 <- ggplot(data = tablaprediccio20,mapping = aes(x=Age,y=probs,group = Pos)) +
+  geom_boxplot() +xlim(c(25,32))
+ggplotly(box2020)
+```

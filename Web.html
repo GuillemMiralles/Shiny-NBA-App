@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base href="_w_70b40153/">
+    <script type="text/javascript">
+(function() {
+  var workerId = '_w_70b40153';
+  // remove base href if worker ID is in url
+  if (window.location.href.indexOf(workerId) > 0) {
+    document.querySelector('base').removeAttribute('href');
+  }
+})();
+</script>
+
+      <script type="text/javascript">
+      var __connect = {
+        shinyPre101: false
+      }
+      </script>
+      
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="application/shiny-singletons">3891ac171834ed25f436995ba40a47edd74e5169,45534f2c59c7069db5da7f5118dc12c792e86de5</script>
+  <script type="application/html-dependencies">jquery[3.5.1];shiny-css[1.6.0];shiny-javascript[1.6.0];font-awesome[5.13.0];selectize[0.12.4];htmlwidgets[1.5.3];datatables-css[0.0.0];datatables-binding[0.18];crosstalk[1.1.1];plotly-binding[4.9.3];ionrangeslider-javascript[2.3.1];strftime[0.9.2];ionrangeslider-css[2.3.1];bootstrap[3.4.1];AdminLTE[2.0.6];shinydashboard[0.7.1]</script>
+<script src="shared/jquery.min.js"></script>
+<link href="shared/shiny.min.css" rel="stylesheet" />
+<script src="shared/shiny.min.js"></script>
+<link href="font-awesome-5.13.0/css/all.min.css" rel="stylesheet" />
+<link href="font-awesome-5.13.0/css/v4-shims.min.css" rel="stylesheet" />
+<link href="shared/selectize/css/selectize.bootstrap3.css" rel="stylesheet" />
+<script src="shared/selectize/js/selectize.min.js"></script>
+<script src="shared/selectize/accessibility/js/selectize-plugin-a11y.min.js"></script>
+<script src="htmlwidgets-1.5.3/htmlwidgets.js"></script>
+<link href="datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
+<script src="datatables-binding-0.18/datatables.js"></script>
+<link href="crosstalk-1.1.1/css/crosstalk.css" rel="stylesheet" />
+<script src="crosstalk-1.1.1/js/crosstalk.min.js"></script>
+<script src="plotly-binding-4.9.3/plotly.js"></script>
+<script src="shared/ionrangeslider/js/ion.rangeSlider.min.js"></script>
+<script src="shared/strftime/strftime-min.js"></script>
+<link href="shared/ionrangeslider/css/ion.rangeSlider.css" rel="stylesheet" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="shared/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+<link href="shared/bootstrap/accessibility/css/bootstrap-accessibility.min.css" rel="stylesheet" />
+<script src="shared/bootstrap/js/bootstrap.min.js"></script>
+<script src="shared/bootstrap/accessibility/js/bootstrap-accessibility.min.js"></script>
+<link href="AdminLTE-2.0.6/AdminLTE.min.css" rel="stylesheet" />
+<link href="AdminLTE-2.0.6/_all-skins.min.css" rel="stylesheet" />
+<script src="AdminLTE-2.0.6/app.min.js"></script>
+<link href="shinydashboard-0.7.1/shinydashboard.css" rel="stylesheet" />
+<script src="shinydashboard-0.7.1/shinydashboard.min.js"></script>  <style>
+.skin-blue .main-header .logo{
+background-color: white;
+color: #201545;
+}
+.skin-blue .main-header .navbar {
+background-color: #201545;
+}
+.skin-blue .main-sidebar{
+background-color: #201545;
+}
+.skin-blue .sidebar-menu>li.active>a{
+background: #201545;
+}
+</style>
+  <title></title>
+  <link rel="stylesheet" href="shinycssloaders-assets/spinner.css"/>
+  <script src="shinycssloaders-assets/spinner.js"></script>
+  <link rel="stylesheet" href="shinycssloaders-assets/css-loaders.css"/>
+  <style>#spinner-be960ce7d42448fa562f5ca0c7d3d892, #spinner-be960ce7d42448fa562f5ca0c7d3d892:before, #spinner-be960ce7d42448fa562f5ca0c7d3d892:after {   background: #0275D8; } #spinner-be960ce7d42448fa562f5ca0c7d3d892 {   color: #0275D8; } #spinner-be960ce7d42448fa562f5ca0c7d3d892 { font-size: 8px; }</style>
+  <style>#spinner-688d9c0168ee9805e0fac38fb4c362a2, #spinner-688d9c0168ee9805e0fac38fb4c362a2:before, #spinner-688d9c0168ee9805e0fac38fb4c362a2:after {   background: #0275D8; } #spinner-688d9c0168ee9805e0fac38fb4c362a2 {   color: #0275D8; } #spinner-688d9c0168ee9805e0fac38fb4c362a2 { font-size: 8px; }</style>
+  <style>#spinner-9cb2307c8117365e09ed1e029745f0f8, #spinner-9cb2307c8117365e09ed1e029745f0f8:before, #spinner-9cb2307c8117365e09ed1e029745f0f8:after {   background: #0275D8; } #spinner-9cb2307c8117365e09ed1e029745f0f8 {   color: #0275D8; } #spinner-9cb2307c8117365e09ed1e029745f0f8 { font-size: 8px; }</style>
+  <style>#spinner-6307382a27c985ea8ba51bc5197078ed, #spinner-6307382a27c985ea8ba51bc5197078ed:before, #spinner-6307382a27c985ea8ba51bc5197078ed:after {   background: #0275D8; } #spinner-6307382a27c985ea8ba51bc5197078ed {   color: #0275D8; } #spinner-6307382a27c985ea8ba51bc5197078ed { font-size: 8px; }</style>
+  <style>#spinner-bd2f3bcd22de69584faa2128fba024de, #spinner-bd2f3bcd22de69584faa2128fba024de:before, #spinner-bd2f3bcd22de69584faa2128fba024de:after {   background: #0275D8; } #spinner-bd2f3bcd22de69584faa2128fba024de {   color: #0275D8; } #spinner-bd2f3bcd22de69584faa2128fba024de { font-size: 8px; }</style>
+  <style>#spinner-0d7578ee28d238c0411faae7b89e2786, #spinner-0d7578ee28d238c0411faae7b89e2786:before, #spinner-0d7578ee28d238c0411faae7b89e2786:after {   background: #0275D8; } #spinner-0d7578ee28d238c0411faae7b89e2786 {   color: #0275D8; } #spinner-0d7578ee28d238c0411faae7b89e2786 { font-size: 8px; }</style>
+<script src="__assets__/sockjs-0.3.min.js"></script>
+<script src="__assets__/shiny-server-client.min.js"></script>
+<script>preShinyInit({reconnect:true,reconnectTimeout:15000,disableProtocols:["xdr-streaming","xdr-polling","websocket"],transportDebugging:false,token:true,workerId:true,subappTag:true,extendSession:true,fixupInternalLinks:true});</script>
+<link rel="stylesheet" type="text/css" href="__assets__/rstudio-connect.css"/>
+</head>
+<body class="skin-blue" style="min-height: 611px;">
+<script type="text/javascript" src="/__static__/components/iframe-resizer/js/iframeResizer.contentWindow.min.js"></script>
+<script type="text/javascript" src="/__static__/frontend/scripts/shinyapps.frame.content.js"></script>
+<script type="text/javascript" src="/__static__/frontend/scripts/shinyapps.js"></script>
+
+  <div class="wrapper">
+    <header class="main-header">
+      <span class="logo">
+        <img src="LOGO_F.png" height="50" width="220"/>
+      </span>
+      <nav class="navbar navbar-static-top" role="navigation">
+        <span style="display:none;">
+          <i class="fa fa-bars" role="presentation" aria-label="bars icon"></i>
+        </span>
+        <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
+          <span class="sr-only">Toggle navigation</span>
+        </a>
+        <div class="navbar-custom-menu">
+          <ul class="nav navbar-nav"></ul>
+        </div>
+      </nav>
+    </header>
+    <aside id="sidebarCollapsed" class="main-sidebar" data-collapsed="false">
+      <section id="sidebarItemExpanded" class="sidebar">
+        <ul class="sidebar-menu">
+          <div id="id_season" class="shiny-html-output"></div>
+          <li class="treeview">
+            <a href="#shiny-tab-p1">
+              <i class="fa fa-table" role="presentation" aria-label="table icon"></i>
+              <span>Estadísticas NBA</span>
+              <i class="fa fa-angle-left pull-right" role="presentation" aria-label="angle-left icon"></i>
+            </a>
+            <ul class="treeview-menu" style="display: none;" data-expanded="EstadísticasNBA">
+              <li>
+                <a href="#shiny-tab-player" data-toggle="tab" data-value="player">
+                  <i class="fa fa-angle-double-right" role="presentation" aria-label="angle-double-right icon"></i>
+                  Jugadores
+                </a>
+              </li>
+              <li>
+                <a href="#shiny-tab-team" data-toggle="tab" data-value="team">
+                  <i class="fa fa-angle-double-right" role="presentation" aria-label="angle-double-right icon"></i>
+                  Equipo
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="treeview">
+            <a href="#shiny-tab-p3">
+              <i class="fa fa-bar-chart-o" role="presentation" aria-label="bar-chart-o icon"></i>
+              <span>Estadísticas avanzadas</span>
+              <i class="fa fa-angle-left pull-right" role="presentation" aria-label="angle-left icon"></i>
+            </a>
+            <ul class="treeview-menu" style="display: none;" data-expanded="Estadísticasavanzadas">
+              <li>
+                <a href="#shiny-tab-p3_eq" data-toggle="tab" data-value="p3_eq">
+                  <i class="fa fa-angle-double-right" role="presentation" aria-label="angle-double-right icon"></i>
+                  Por equipos
+                </a>
+              </li>
+              <li>
+                <a href="#shiny-tab-p3_j" data-toggle="tab" data-value="p3_j">
+                  <i class="fa fa-angle-double-right" role="presentation" aria-label="angle-double-right icon"></i>
+                  Por jugadores
+                </a>
+              </li>
+              <li>
+                <a href="#shiny-tab-p3_sht" data-toggle="tab" data-value="p3_sht">
+                  <i class="fa fa-angle-double-right" role="presentation" aria-label="angle-double-right icon"></i>
+                  Lanzamientos
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="treeview">
+            <a href="#shiny-tab-p2">
+              <i class="fa fa-dashboard" role="presentation" aria-label="dashboard icon"></i>
+              <span>Predicciones</span>
+              <i class="fa fa-angle-left pull-right" role="presentation" aria-label="angle-left icon"></i>
+            </a>
+            <ul class="treeview-menu" style="display: none;" data-expanded="Predicciones">
+              <div class="form-group shiny-input-container">
+                <label class="control-label" id="anyo_mod-label" for="anyo_mod">Seleccione la temporada</label>
+                <div>
+                  <select id="anyo_mod"><option value="2015" selected>2015</option>
+<option value="2016">2016</option>
+<option value="2017">2017</option></select>
+                  <script type="application/json" data-for="anyo_mod" data-nonempty="">{"plugins":["selectize-plugin-a11y"]}</script>
+                </div>
+              </div>
+              <li>
+                <a href="#shiny-tab-m1" data-toggle="tab" data-value="m1">
+                  <i class="fa fa-angle-double-right" role="presentation" aria-label="angle-double-right icon"></i>
+                  Modelo 1
+                </a>
+              </li>
+              <li>
+                <a href="#shiny-tab-m2" data-toggle="tab" data-value="m2">
+                  <i class="fa fa-angle-double-right" role="presentation" aria-label="angle-double-right icon"></i>
+                  Modelo 2
+                </a>
+              </li>
+              <li>
+                <a href="#shiny-tab-m3" data-toggle="tab" data-value="m3">
+                  <i class="fa fa-angle-double-right" role="presentation" aria-label="angle-double-right icon"></i>
+                  Año 2021
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <a href="#shiny-tab-salary" data-toggle="tab" data-value="salary">
+              <i class="fa fa-money" role="presentation" aria-label="money icon"></i>
+              <span>Salario Medio</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </aside>
+    <div class="content-wrapper">
+      <section class="content">
+        <div class="tab-content">
+          <div role="tabpanel" class="tab-pane" id="shiny-tab-player">
+            <h2>Estadísticas de los jugadores de la NBA en la temporada seleccionada:</h2>
+            <div id="tabla_temporada" style="width:100%; height:auto; " class="datatables html-widget html-widget-output"></div>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="shiny-tab-team">
+            <h2>Estadísticas de los equipos</h2>
+            <h5>Los datos de las estadísticas de equipos están disponibles a partir de la temporada 1997</h5>
+            <div id="tabla_temporada_eq" style="width:100%; height:auto; " class="datatables html-widget html-widget-output"></div>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="shiny-tab-p3_eq">
+            <h2>Estadísticas avanzadas de los equipos</h2>
+            <h5>En estos gráficos podemos ver los puntos anotados por cada 100 posesiones del equipo, y los puntos recibidos por cada 100
+               posesiones. Los colores representan si el equipo entra en los playoffs o no. De forma que cuando más a la derecha en el eje X
+               y más abajo en el Y, el equipo tiene unas mejores estadísticas.</h5>
+            <div class="shiny-spinner-output-container shiny-spinner-hideui ">
+              <div class="load-container shiny-spinner-hidden load1">
+                <div id="spinner-be960ce7d42448fa562f5ca0c7d3d892" class="loader">Loading...</div>
+              </div>
+              <div id="ggplot1" class="shiny-plot-output" style="width:100%;height:400px;"></div>
+            </div>
+            <div id="plotly2" style="width:100%; height:400px; " class="plotly html-widget html-widget-output shiny-report-size shiny-report-theme"></div>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="shiny-tab-p3_j">
+            <h2>Estadísticas avanzadas de los jugadores</h2>
+            <h5>En estos gráficos podemos ver el ratio de asistencias y pérdidas de los jugadores de la NBA. Esta es una forma de ver que capacidad tiene el 
+               jugador de crear ocasiones sin perder balones. De forma que cuando más a la derecha en el eje X
+               y más abajo en el Y, el jugador tiene unas mejores estadísticas. En el primer gráfico cortamos a partir de 250 asistencias para
+               poder ver los mejores jugadores.</h5>
+            <div class="shiny-spinner-output-container shiny-spinner-hideui ">
+              <div class="load-container shiny-spinner-hidden load1">
+                <div id="spinner-688d9c0168ee9805e0fac38fb4c362a2" class="loader">Loading...</div>
+              </div>
+              <div id="ggplot2" class="shiny-plot-output" style="width:100%;height:400px;"></div>
+            </div>
+            <div id="plotly3" style="width:100%; height:400px; " class="plotly html-widget html-widget-output shiny-report-size shiny-report-theme"></div>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="shiny-tab-p3_sht">
+            <h2>Tiros encestados y fallados</h2>
+            <h5>Podemos ver los tiros encestados y fallados, y las zonas desde donde se hace el lanzamiento por los mejores jugadores de los 
+               últimos años</h5>
+            <div id="id_player" class="shiny-html-output"></div>
+            <div id="id_season_shots" class="shiny-html-output"></div>
+            <div id="plot_shots" class="shiny-plot-output" style="width:1100px;height:750px;"></div>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="shiny-tab-m1">
+            <h2>Modelo 1</h2>
+            <h5>Este modelo está elaborado con los datos de la temporada para la cual se votará el mejor quinteto.
+               Por ejemplo, viendo los datos que ha hecho el jugador en la temporada 2015, el modelo estima que jugadores
+               tienen mayor probabilidad de entrar al quinteto al final de temporada en ese mismo año.</h5>
+            <div class="shiny-spinner-output-container shiny-spinner-hideui ">
+              <div class="load-container shiny-spinner-hidden load1">
+                <div id="spinner-9cb2307c8117365e09ed1e029745f0f8" class="loader">Loading...</div>
+              </div>
+              <div style="height:400px" class="shiny-spinner-placeholder"></div>
+              <div id="mo1" style="width:100%; height:auto; " class="plotly html-widget html-widget-output shiny-report-size shiny-report-theme"></div>
+            </div>
+            <div class="form-group shiny-input-container">
+              <label class="control-label" id="num_j_m1-label" for="num_j_m1">Número de jugadores</label>
+              <input class="js-range-slider" id="num_j_m1" data-skin="shiny" data-min="1" data-max="40" data-from="15" data-step="1" data-grid="true" data-grid-num="9.75" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-keyboard="true" data-data-type="number"/>
+            </div>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="shiny-tab-m2">
+            <h2>Modelo 2</h2>
+            <h5>Este modelo está elaborado con los datos de la temporada anterior a la votación del mejor quinteto. 
+               Por ejemplo, viendo los datos que ha hecho el jugador en la temporada 2014, el modelo estima que jugadores 
+               tienen mayor probabilidad de entrar al quinteto del año siguiente, 2015.</h5>
+            <div class="shiny-spinner-output-container shiny-spinner-hideui ">
+              <div class="load-container shiny-spinner-hidden load1">
+                <div id="spinner-6307382a27c985ea8ba51bc5197078ed" class="loader">Loading...</div>
+              </div>
+              <div style="height:400px" class="shiny-spinner-placeholder"></div>
+              <div id="mo2" style="width:100%; height:auto; " class="plotly html-widget html-widget-output shiny-report-size shiny-report-theme"></div>
+            </div>
+            <div class="form-group shiny-input-container">
+              <label class="control-label" id="num_j_m2-label" for="num_j_m2">Número de jugadores</label>
+              <input class="js-range-slider" id="num_j_m2" data-skin="shiny" data-min="1" data-max="40" data-from="15" data-step="1" data-grid="true" data-grid-num="9.75" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-keyboard="true" data-data-type="number"/>
+            </div>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="shiny-tab-m3">
+            <h2>Modelo para el próximo año</h2>
+            <h5>Este modelo hace una predicción del próximo quinteto de la NBA con los datos actuales (aún no conocemos
+               el resultado).</h5>
+            <div class="shiny-spinner-output-container shiny-spinner-hideui ">
+              <div class="load-container shiny-spinner-hidden load1">
+                <div id="spinner-bd2f3bcd22de69584faa2128fba024de" class="loader">Loading...</div>
+              </div>
+              <div style="height:400px" class="shiny-spinner-placeholder"></div>
+              <div id="mo3" style="width:100%; height:auto; " class="plotly html-widget html-widget-output shiny-report-size shiny-report-theme"></div>
+            </div>
+            <div class="form-group shiny-input-container">
+              <label class="control-label" id="num_j_m3-label" for="num_j_m3">Número de jugadores</label>
+              <input class="js-range-slider" id="num_j_m3" data-skin="shiny" data-min="1" data-max="40" data-from="15" data-step="1" data-grid="true" data-grid-num="9.75" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-keyboard="true" data-data-type="number"/>
+            </div>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="shiny-tab-salary">
+            <h2>Salarios en la NBA</h2>
+            <h5>Esta gráfica representa la evolución de la media de dinero destinado por 
+                                                 los equipos al salario de los jugadores</h5>
+            <div class="shiny-spinner-output-container shiny-spinner-hideui ">
+              <div class="load-container shiny-spinner-hidden load1">
+                <div id="spinner-0d7578ee28d238c0411faae7b89e2786" class="loader">Loading...</div>
+              </div>
+              <div style="height:400px" class="shiny-spinner-placeholder"></div>
+              <div id="salaries" style="width:100%; height:auto; " class="plotly html-widget html-widget-output shiny-report-size shiny-report-theme"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
